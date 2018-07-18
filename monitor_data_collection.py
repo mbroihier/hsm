@@ -2,6 +2,7 @@
 '''
 Monitor Data Collection
 '''
+import getopt
 import json
 import os
 import re
@@ -12,7 +13,7 @@ class MonitorLogToJson(object):
     '''
     Class that handles the parsing of the monitor log into JSON
     '''
-    def __init__(self, log_file, json_file):
+    def __init__(self, log_file, json_file, file_type):
         '''
         Constructor
         '''
@@ -30,8 +31,16 @@ class MonitorLogToJson(object):
         self.source = re.compile(r"SRC=([0-9\.]+)")
         self.destination = re.compile(r"DST=([0-9\.]+)")
         self.time_stamp = re.compile(r" \[ (\d+\.\d+)\]")
-
+        if (file_type == "json") | (file_type == "javascript"):
+            self.file_type = file_type
+        else:
+            print("illegal file type: " + file_type)
+            sys.exit(-1)
+        
     def parse_log(self):
+        '''
+        Parse the log file into JSON
+        '''
         line = self.file_handle.readline().strip()
         incoming_total = 0
         outgoing_total = 0
@@ -56,17 +65,56 @@ class MonitorLogToJson(object):
                     self.series["outbound traffic total"].append([time_stamp, outgoing_total])
                     print(match.group(1) + " " + source + " " + destination + ": " + str(packet_length) + " " + str(outgoing_total))
             line = self.file_handle.readline().strip()
-        json.dump(self.series, self.output_file)
-        self.output_file.close()
 
-def main(source, destination):
+    def write(self):
+        '''
+        Write JSON or JavaScript file
+        '''
+        if self.file_type == "json":
+            json.dump(self.series, self.output_file)
+        else:
+            javascript_string = "var collectedData = JSON.parse('"
+            javascript_string += json.dumps(self.series)
+            javascript_string += "');"
+            self.output_file.write(javascript_string)
+        self.output_file.close()
+def main():
     '''
     main program
     '''
-
-    log_to_json = MonitorLogToJson(source, destination)
+    source = ""
+    destination = ""
+    file_type = "json"
+    help_string = "monitor_data_collection.py [--js] <file to convert>"
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "", ["js"])
+        for opt, arg in opts:
+            print(opt)
+            print(arg)
+            if  opt == "--js":
+                file_type = "javascript"
+            else:
+                print(help_string)
+                sys.exit(-1)
+        print(args)
+        for arg in args:
+            if source == "":
+                source = arg
+                print(arg)
+            else:
+                if destination == "":
+                    destination = arg
+                    print(arg)
+                else:
+                    print(help_string)
+                    sys.exit(-1)
+    except getopt.GetoptError:
+        print(help_string)
+        sys.exit(-1)
+    log_to_json = MonitorLogToJson(source, destination, file_type)
     log_to_json.parse_log()
+    log_to_json.write()
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    main()
 
