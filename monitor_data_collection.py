@@ -13,12 +13,12 @@ class MonitorLogToJson(object):
     '''
     Class that handles the parsing of the monitor log into JSON
     '''
-    def __init__(self, log_file, json_file, file_type):
+    def __init__(self, log_file, plot_info_file, file_type):
         '''
         Constructor
         '''
         self.file_handle = open(log_file, "r")
-        self.output_file = open(json_file, "w")
+        self.output_file = open(plot_info_file, "w")
         self.series = {}
         self.series["inbound traffic"] = []
         self.series["inbound traffic total"] = []
@@ -30,12 +30,23 @@ class MonitorLogToJson(object):
         self.packet_length = re.compile(r"LEN=(\d+)")
         self.source = re.compile(r"SRC=([0-9\.]+)")
         self.destination = re.compile(r"DST=([0-9\.]+)")
-        self.time_stamp = re.compile(r" \[ (\d+\.\d+)\]")
+        self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
         if (file_type == "json") | (file_type == "javascript"):
             self.file_type = file_type
         else:
             print("illegal file type: " + file_type)
             sys.exit(-1)
+
+    def store_by_source_and_destination(self, source, destination, time_stamp, packet_length):
+        '''
+        Store totals by source and destination
+        '''
+        path = source + "-->" + destination
+        if (path) in self.series:
+            self.series[path].append([time_stamp, self.series[path][-1][1] + packet_length])
+        else:
+            self.series[path] = []
+            self.series[path].append([time_stamp, packet_length])
         
     def parse_log(self):
         '''
@@ -64,6 +75,7 @@ class MonitorLogToJson(object):
                     self.series["outbound traffic"].append([time_stamp, packet_length])
                     self.series["outbound traffic total"].append([time_stamp, outgoing_total])
                     print(match.group(1) + " " + source + " " + destination + ": " + str(packet_length) + " " + str(outgoing_total))
+                self.store_by_source_and_destination(source, destination, time_stamp, packet_length)
             line = self.file_handle.readline().strip()
 
     def write(self):
