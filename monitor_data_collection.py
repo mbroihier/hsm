@@ -54,6 +54,9 @@ class MonitorLogToJson(object):
         outgoing_total = 0
         all_bytes = 0
         next_time_stamp = 0
+        offset = 0
+        last_time_stamp = 0
+        
         while line != "":
             if self.is_forward.search(line): # this is a trace with data being forwarded
                 match = self.packet_length.search(line)
@@ -65,6 +68,11 @@ class MonitorLogToJson(object):
                 destination = match.group(1)
                 match = self.time_stamp.search(line)
                 time_stamp = float(match.group(1))
+                if time_stamp < last_time_stamp:
+                    offset += last_time_stamp + 1000
+                    print("bumping offset: " + str(offset))
+                last_time_stamp = time_stamp
+                time_stamp += offset
                 if time_stamp >= next_time_stamp:
                     self.series["all"].append([time_stamp, all_bytes])
                     next_time_stamp = time_stamp + 1.0
