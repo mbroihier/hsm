@@ -27,6 +27,7 @@ class MonitorLogToJson(object):
         self.packet_length = re.compile(r"LEN=(\d+)")
         self.source = re.compile(r"SRC=([0-9\.]+)")
         self.destination = re.compile(r"DST=([0-9\.]+)")
+        self.local_network = re.compile(r"192.168.100")
         self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
         if (file_type == "json") | (file_type == "javascript"):
             self.file_type = file_type
@@ -38,7 +39,14 @@ class MonitorLogToJson(object):
         '''
         Store totals by source and destination
         '''
-        path = source + "-->" + destination
+        path = ""
+        if self.local_network.search(source):
+            path = source + "<-->" + destination
+        else:
+            if self.local_network.search(destination):
+                path = destination + "<-->" + source
+            else:
+                path = "unexpected"
         if (path) in self.series:
             self.series[path].append([time_stamp, self.series[path][-1][1] + packet_length])
         else:
@@ -102,8 +110,6 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["js"])
         for opt, arg in opts:
-            print(opt)
-            print(arg)
             if  opt == "--js":
                 file_type = "javascript"
             else:
