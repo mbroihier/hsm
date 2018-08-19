@@ -1,0 +1,38 @@
+h1,p {
+    text-align: center;
+}
+
+ul, iframe {
+    margin-left: 25%;
+    text-align: center;
+}
+
+li {
+    text-align: left;
+}
+
+body {
+    font-family: verdana;
+    color: black;
+}
+
+a {
+    font-family: verdana;
+    color: black;
+}
+
+body input,body label {
+    display: block;
+}
+
+#ownAxis input {
+    float: left;
+}
+
+#removedLines input {
+    float: left;
+}
+
+#removedLines {
+    display: none;
+}

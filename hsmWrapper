@@ -1,0 +1,4 @@
+#!/bin/bash
+sudo /sbin/iptables-restore < /home/pi/hsm/iptables.ipv4.nat.wlogs
+cd /home/pi/hsm
+node hsm-display-server.js

@@ -1,0 +1,12 @@
+[Unit]
+Description=Hotspot Monitor
+After=network.target
+
+[Service]
+ExecStart=/home/pi/hsm/hsmWrapper
+Restart=always
+RestartSec=10
+
+[Install]
+Alias=hsm.service
+WantedBy=default.target

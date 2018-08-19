@@ -1,0 +1,24 @@
+#!/bin/sh
+
+    set -x
+    sudo systemctl stop dnsmasq
+    sudo systemctl stop hostapd
+
+    cd New
+    find . -type f -print | while read line
+    do
+        sudo cp $line /$line
+    done
+
+    sudo service dhcpcd restart
+    sudo ifdown wlan0
+    sudo ifup wlan0
+
+    sudo systemctl enable hostapd
+    sudo systemctl enable dnsmasq
+    sudo systemctl start hostapd
+    sudo systemctl start dnsmasq
+    sync
+
+
+

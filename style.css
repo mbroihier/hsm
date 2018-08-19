@@ -1,0 +1,47 @@
+h1,p {
+    text-align: center;
+}
+
+ul {
+    margin-left: 25%;
+    margin-top: 10px;
+    text-align: center;
+}
+
+iframe, img {
+    margin-left: 25%;
+    margin-top: 10px;
+    text-align: center;
+    border: 2px solid;
+}
+
+li {
+    text-align: left;
+}
+
+body {
+    font-family: verdana;
+    color: #000000;
+    background-image: url(IMG_3282r2.JPG);
+}
+
+a {
+    font-family: verdana;
+    color: #000000;
+}
+
+body input,body label {
+    display: block;
+}
+
+#ownAxis input {
+    float: left;
+}
+
+#removedLines input {
+    float: left;
+}
+
+#removedLines {
+    display: none;
+}
