@@ -9,16 +9,18 @@ import re
 import sys
 import time
 
-class MonitorLogToJson(object):
+class MonitorLogToJS(object):
     '''
-    Class that handles the parsing of the monitor log into JSON
+    Class that handles the parsing of the monitor log into Javascript plot snippets
     '''
-    def __init__(self, log_file, plot_info_file, file_type):
+    def __init__(self, log_file, plot_info_file):
         '''
         Constructor
         '''
         self.file_handle = open(log_file, "r")
-        self.output_file = open(plot_info_file, "w")
+        self.plot_info_file = plot_info_file.replace(".js","")
+        self.boot = 1
+        self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
         self.series = {}
         self.series["all"] = []
         self.is_forward = re.compile(r" FWD")
@@ -29,11 +31,6 @@ class MonitorLogToJson(object):
         self.destination = re.compile(r"DST=([0-9\.]+)")
         self.local_network = re.compile(r"192.168.100")
         self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
-        if (file_type == "json") | (file_type == "javascript"):
-            self.file_type = file_type
-        else:
-            print("illegal file type: " + file_type)
-            sys.exit(-1)
 
     def store_by_source_and_destination(self, source, destination, time_stamp, packet_length):
         '''
@@ -42,12 +39,19 @@ class MonitorLogToJson(object):
         path = ""
         if self.local_network.search(source):
             path = source + "<-->" + destination
+            if source in self.series:
+                self.series[source].append([time_stamp, self.series[source][-1][1] + packet_length])
+            else:
+                self.series[source] = []
+                self.series[source].append([time_stamp, packet_length])
+
         else:
             if self.local_network.search(destination):
                 path = destination + "<-->" + source
             else:
                 path = "unexpected"
-        if (path) in self.series:
+
+        if path in self.series:
             self.series[path].append([time_stamp, self.series[path][-1][1] + packet_length])
         else:
             self.series[path] = []
@@ -77,8 +81,14 @@ class MonitorLogToJson(object):
                 match = self.time_stamp.search(line)
                 time_stamp = float(match.group(1))
                 if time_stamp < last_time_stamp:
-                    offset += last_time_stamp + 1000
-                    print("bumping offset: " + str(offset))
+                    #offset += last_time_stamp + 1000
+                    #print("bumping offset: " + str(offset))
+                    self._write()
+                    all_bytes = 0
+                    next_time_stamp = 0
+                    offset = 0
+                    last_time_stamp = 0
+                    
                 last_time_stamp = time_stamp
                 time_stamp += offset
                 if time_stamp >= next_time_stamp:
@@ -89,16 +99,28 @@ class MonitorLogToJson(object):
 
     def write(self):
         '''
-        Write JSON or JavaScript file
+        Write JavaScript file
         '''
-        if self.file_type == "json":
-            json.dump(self.series, self.output_file)
-        else:
-            javascript_string = "var collectedData = JSON.parse('"
-            javascript_string += json.dumps(self.series)
-            javascript_string += "');"
-            self.output_file.write(javascript_string)
+        javascript_string = "var collectedData = JSON.parse('"
+        javascript_string += json.dumps(self.series)
+        javascript_string += "');"
+        self.output_file.write(javascript_string)
         self.output_file.close()
+
+    def _write(self):
+        '''
+        Write intermediate JavaScript file
+        '''
+        javascript_string = "var collectedData = JSON.parse('"
+        javascript_string += json.dumps(self.series)
+        javascript_string += "');"
+        self.output_file.write(javascript_string)
+        self.output_file.close()
+        self.boot += 1
+        self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
+        self.series = {}
+        self.series["all"] = []
+
 def main():
     '''
     main program
@@ -106,7 +128,7 @@ def main():
     source = ""
     destination = ""
     file_type = "json"
-    help_string = "monitor_data_collection.py [--js] <file to convert>"
+    help_string = "monitor_data_collection.py <file to convert> <plot_file_prefix>"
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["js"])
         for opt, arg in opts:
@@ -115,22 +137,19 @@ def main():
             else:
                 print(help_string)
                 sys.exit(-1)
-        print(args)
         for arg in args:
             if source == "":
                 source = arg
-                print(arg)
             else:
                 if destination == "":
                     destination = arg
-                    print(arg)
                 else:
                     print(help_string)
                     sys.exit(-1)
     except getopt.GetoptError:
         print(help_string)
         sys.exit(-1)
-    log_to_json = MonitorLogToJson(source, destination, file_type)
+    log_to_json = MonitorLogToJS(source, destination)
     log_to_json.parse_log()
     log_to_json.write()
 
