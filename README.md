@@ -2,7 +2,11 @@
 
 This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.
 
-Assembly - Software
+![Alt text](/main.png?raw=true "Main page of file server")
+![Alt text](/detail.png?raw=true "Detailed Graph of a Log")
+
+
+Installation
 
   1)  Install Stretch Lite from www.raspberrypi.org/downloads/raspbian
       I do headless installs of my PI's which, on the publication date
