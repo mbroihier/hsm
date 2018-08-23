@@ -48,6 +48,11 @@ class MonitorLogToJS(object):
         else:
             if self.local_network.search(destination):
                 path = destination + "<-->" + source
+                if destination in self.series:
+                    self.series[destination].append([time_stamp, self.series[destination][-1][1] + packet_length])
+                else:
+                    self.series[destination] = []
+                    self.series[destination].append([time_stamp, packet_length])
             else:
                 path = "unexpected"
 

@@ -117,6 +117,22 @@ app.get("*", function(request, response, next) {
     console.log(request.method);
     next();
   });
+app.use(bodyParser.urlencoded({extended: true}));
+app.post("/process_new_logs.html", function(request, response, next) {
+    console.log("fell into process new logs");
+    console.log(request.body);
+    if (typeof request.body.yes === "undefined") {
+        console.log("not doing post processing");
+	response.redirect("/");
+	return;
+    }
+    console.log("doing post processing");
+    let date = new Date();
+    let filePrefix = "plot_" + (date.getMonth()+1) + "-" + date.getDate() + "-" + (1900 + date.getYear());
+    execSync("./monitor_data_collection.py /var/log/kern.log " + filePrefix);
+    response.redirect("/");
+    next();
+  });
 app.post("*", function(request, response, next) {
     console.log("fell into default post");
     console.log(request.url);
