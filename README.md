@@ -33,6 +33,7 @@ Installation
  15)  To install the access point setup, type ./apinstall on the command line (this script was inspired by Cornelius Keck) 
  16)  change the SSID and password in the hostapd.conf file
  17)  Install the node.js libraries by typing npm install
+ 18)  Enable IP forwarding by editing /etc/sysctl.conf
  18)  reboot with sudo shutdown -r now
 
 When the PI comes up, you should be able to login to it from your access point network at address 192.168.100.1.  You should find a file server running at http://192.168.100.1:3000.  If you connect a USB cable to your smart phone and enable USB tethering, you should have access to the web through the hotspot.
