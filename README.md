@@ -22,7 +22,7 @@ Installation
   4)  Change the node name to hsm.
   5)  sudo apt-get update
   6)  sudo apt-get install git
-  7   sudo apt-get install hostapd
+  7)   sudo apt-get install hostapd
   8)  sudo apt-get install dnsmasq
   9)  sudo apt-get install nodejs
  10)  sudo apt-get install npm
