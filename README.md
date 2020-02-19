@@ -1,6 +1,6 @@
 # hsm - Hotspot Monitor
 
-This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.
+This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.  I've installed this on Stretch and Buster versions of Raspbian.  When installing this, I recommend that you use the PI that you intend to use as the hotspot.  Using this approach avoids driver installation issues that make hostapd inoperable.  Since my initial release, I've added instructions for installing Pi-hole.  I did this to reduce traffic when using my mobile data.  I also did this to have access to hostnames from the Pi-hole database.  I'm going to use this to map IP address to hostnames to help clarify what applications are using large amounts of data. 
 
 ![Alt text](/main.png?raw=true "Main page of file server")
 ![Alt text](/detail.png?raw=true "Detailed Graph of a Log")
@@ -8,8 +8,8 @@ This repository contains code for implementing a hotspot monitor on a Raspberry 
 
 Installation
 
-  1)  Install Stretch Lite from www.raspberrypi.org/downloads/raspbian
-      I do headless installs of my PI's which, on the publication date
+  1)  Install Buster Lite from www.raspberrypi.org/downloads/raspbian
+      I do headless installs of my PI's which, on this publication date
       means that I copy the raspbian image to the SD card plugged into my
       Mac, mount the card and touch the ssh file on the boot partition.
       
@@ -17,27 +17,51 @@ Installation
       with an ethernet cable so that you can update your image and
       install necessary packages from the Internet and won't be affected
       by the adustments made to the wlan0 interface.
-  2)  Boot the pi off the installed image.
+  2)  Put the SD card in your target PI and boot it.
   3)  Change the password.
   4)  Change the node name to hsm.
   5)  sudo apt-get update
-  6)  sudo apt-get install git
-  7)   sudo apt-get install hostapd
-  8)  sudo apt-get install dnsmasq
-  9)  sudo apt-get install nodejs
- 10)  sudo apt-get install npm
- 11)  git clone https://github.com/mbroihier/hsm
- 12)  cd hsm
- 13)  sudo cp -p hsm.service /lib/systemd/system/ 
- 14)  sudo systemctl enable hsm.service
- 15)  To install the access point setup, type ./apinstall on the command line (this script was inspired by Cornelius Keck) 
- 16)  change the SSID and password in the hostapd.conf file
- 17)  Install the node.js libraries by typing npm install
- 18)  Enable IP forwarding by editing /etc/sysctl.conf
- 18)  reboot with sudo shutdown -r now
+  6)  sudo apt-get upgrade
+  7)  sudo apt-get install git
+  8)  sudo apt-get install hostapd
+      - if this fails (seems to on PI 4's), do this:
+        + sudo systemctl unmask hostapd
+        + sudo systemctl enable hostapd
+  9)  sudo apt-get install dnsmasq
+ 10)  sudo apt-get install nodejs
+ 11)  sudo apt-get install npm
+ 12)  git clone https://github.com/mbroihier/hsm
+ 13)  cd hsm
+ 14)  sudo cp -p hsm.service /lib/systemd/system/ 
+ 15)  sudo systemctl enable hsm.service
+ 16)  To install the access point setup, type ./apinstall on the command line (this script was inspired by Cornelius Keck)
+      - ./apinstall 
+ 17)  change the SSID and password in the hostapd.conf file
+ 18)  Install the node.js libraries 
+      - npm install
+ 19)  Enable IP forwarding by editing /etc/sysctl.conf
+ 20)  Reboot, once booted, the hotspot and hotspot monitor should be active.  If you do not want Pi-hole, stop here.
+      - sudo shutdown -r now
+ 21)  Using a device attached to the hotspot network (it should be available after boot), log into the hotspot (192.168.100.1).
+ 22)  Tether your phone to the Raspberry PI using an USB inteface cable with appropriate adapters.  At this point, to reduce consumption of your mobile data, you want your phone connected to your home wifi.  
+ 23)  Stop dnsmasq using sudo systemctl stop dnsmasq.  This is being done so that during the install of Pi-hole, the disabling of dnsmasq does not terminate DNS functionality.
+ 24)  Check to see if you have access to a name server
+      - ping www.google.com
+ 25)  If you can't ping www.google.com, then edit /etc/resolv.conf and replace 127.0.0.1 with 8.8.8.8 as the name server IP address
+      - sudo vi /etc/resolv.conf
+ 26)  Ping again to make sure you can now ping google.
+ 27)  cd hsm
+ 28)  git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
+ 29)  cd "Pi-hole/automated install/"
+ 30)  sudo bash basic-install.sh
+ 31)  When questioned, select the wlan0 lan, and your host address and gateway (192.168.100.1 from your /etc/network/interfaces file) to the values you configured in your hostapd.conf file.
+ 32)  When complete, change your Pi-hole password to something you can remember
+      - pihole -a -p
+ 33)  Connect a device with a browser to your network and bring up the brower and navigate to the Pi-hole admin console (http://192.168.100.1/admin) and log into the administrator account.
+ 34)  Click on Setup and setup the DHCP server (enable it and save it - maybe adjust your range depending on the number of clients you want to support).
+ 35)  After logging out of the Pi-hole admin account, reboot the raspberry pi from your login console.  After the PI comes up, devices connecting to your hotspot will automatically have their requests to known ad servers filtered out by Pi-hole.
 
-When the PI comes up, you should be able to login to it from your access point network at address 192.168.100.1.  You should find a file server running at http://192.168.100.1:3000.  If you connect a USB cable to your smart phone and enable USB tethering, you should have access to the web through the hotspot.
-
+I've used this with PI 0's, PI 3's, and PI 4's.  I've used Stretch on the PI 3's and Buster on the PI 0's and PI 4's.  I have always used the "lite" versions.
 
 
 
