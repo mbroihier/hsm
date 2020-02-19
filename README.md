@@ -44,7 +44,8 @@ Installation
       - sudo shutdown -r now
  21)  Using a device attached to the hotspot network (it should be available after boot), log into the hotspot (192.168.100.1).
  22)  Tether your phone to the Raspberry PI using an USB inteface cable with appropriate adapters.  At this point, to reduce consumption of your mobile data, you want your phone connected to your home wifi.  
- 23)  Stop dnsmasq using sudo systemctl stop dnsmasq.  This is being done so that during the install of Pi-hole, the disabling of dnsmasq does not terminate DNS functionality.
+ 23)  Stop dnsmasq.  This is being done so that during the install of Pi-hole, the disabling of dnsmasq does not terminate DNS functionality.
+      - sudo systemctl stop dnsmasq
  24)  Check to see if you have access to a name server
       - ping www.google.com
  25)  If you can't ping www.google.com, then edit /etc/resolv.conf and replace 127.0.0.1 with 8.8.8.8 as the name server IP address
@@ -54,14 +55,14 @@ Installation
  28)  git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
  29)  cd "Pi-hole/automated install/"
  30)  sudo bash basic-install.sh
- 31)  When questioned, select the wlan0 lan, and your host address and gateway (192.168.100.1 from your /etc/network/interfaces file) to the values you configured in your hostapd.conf file.
+ 31)  When questioned, select the wlan0 lan, and set your host address and gateway to 192.168.100.1 (from your /etc/network/interfaces file).
  32)  When complete, change your Pi-hole password to something you can remember
       - pihole -a -p
  33)  Connect a device with a browser to your network and bring up the brower and navigate to the Pi-hole admin console (http://192.168.100.1/admin) and log into the administrator account.
  34)  Click on Setup and setup the DHCP server (enable it and save it - maybe adjust your range depending on the number of clients you want to support).
  35)  After logging out of the Pi-hole admin account, reboot the raspberry pi from your login console.  After the PI comes up, devices connecting to your hotspot will automatically have their requests to known ad servers filtered out by Pi-hole.
 
-I've used this with PI 0's, PI 3's, and PI 4's.  I've used Stretch on the PI 3's and Buster on the PI 0's and PI 4's.  I have always used the "lite" versions.
+This procedure has been used with PI 0's, PI 3's, and PI 4's.  On the PI 3's, I've installed Stretch "lite" Raspbian.  On PI 0' and PI 4's I've installed Buster "lite" Raspbian.
 
 
 
