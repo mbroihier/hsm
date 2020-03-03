@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+import url_ip_utils
+
+url_ip_utils.main()
+
+

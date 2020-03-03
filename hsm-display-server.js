@@ -67,7 +67,7 @@ app.get("/", function(request, response, next) {
     let document = dom.window.document;
     let insertionPoint = document.querySelector("#list");
     for (let file of files) {
-      if (file.indexOf("plot_") >= 0) {
+      if (file.indexOf("plot_") == 0) {
         let element = document.createElement("a");
         let graphFile = file.replace("plot_", "graph_").replace(".js", ".html");
         element.setAttribute("href",graphFile);
@@ -79,7 +79,7 @@ app.get("/", function(request, response, next) {
     }
     insertionPoint = document.querySelector("#JSONlist");
     for (let file of files) {
-      if (file.indexOf("plot_") >= 0) {
+      if (file.indexOf("plot_") == 0) {
         let element = document.createElement("a");
         element.setAttribute("href",file);
         element.innerHTML = file;
@@ -130,6 +130,7 @@ app.post("/process_new_logs.html", function(request, response, next) {
     let date = new Date();
     let filePrefix = "plot_" + (date.getMonth()+1) + "-" + date.getDate() + "-" + (1900 + date.getYear());
     execSync("./monitor_data_collection.py /var/log/kern.log " + filePrefix);
+    execSync("./annotate_plot_files")
     response.redirect("/");
     next();
   });

@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+'''
+Convert name to an IP address
+'''
+import re
+import os
+
+import url_ip_utils
+
+def main():
+    '''
+    Annotate all of the plot files in this directory - if possible
+    '''
+    database = url_ip_utils.lookup_url_ip()
+    list_of_files = os.listdir("./")
+    plot_file = re.compile(r"plot_.+\.js")
+    linkBundles = re.compile(r"(\d+\.\d+\.\d+.\d+<-->\d+\.\d+\.\d+\.\d+)\"")
+    for file_candidate in list_of_files:
+        if plot_file.search(file_candidate):
+           print(file_candidate) 
+           fileHandle = open(file_candidate, "r")
+           bigLine = ""
+           for line in fileHandle:
+               bigLine += line
+           fileHandle.close()
+           listOfBundles = linkBundles.findall(bigLine)
+           for bundle in listOfBundles:
+               ip1, ip2 = bundle.split("<-->")
+               anotatedIP1 = database.anotateIP(ip1)
+               anotatedIP2 = database.anotateIP(ip2)
+               anotatedTarget = anotatedIP1 + "<-->" + anotatedIP2
+               bigLine = bigLine.replace(bundle, anotatedTarget, 1)
+
+           # overwrite the file with an anotated version
+           fileHandle = open(file_candidate, "w")
+           fileHandle.write(bigLine)
+           fileHandle.close()
+if __name__ == '__main__':
+    main()
