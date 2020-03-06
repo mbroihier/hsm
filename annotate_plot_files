@@ -26,10 +26,10 @@ def main():
            listOfBundles = linkBundles.findall(bigLine)
            for bundle in listOfBundles:
                ip1, ip2 = bundle.split("<-->")
-               anotatedIP1 = database.anotateIP(ip1)
-               anotatedIP2 = database.anotateIP(ip2)
-               anotatedTarget = anotatedIP1 + "<-->" + anotatedIP2
-               bigLine = bigLine.replace(bundle, anotatedTarget, 1)
+               annotatedIP1 = database.annotateIP(ip1)
+               annotatedIP2 = database.annotateIP(ip2)
+               annotatedTarget = annotatedIP1 + "<-->" + annotatedIP2
+               bigLine = bigLine.replace('"' + bundle + '"', '"' + annotatedTarget + '"', 1)
 
            # overwrite the file with an anotated version
            fileHandle = open(file_candidate, "w")

@@ -37,9 +37,9 @@ class lookup_url_ip(object):
         '''
         print(self.URL2IP, self.IP2URL)
 
-    def anotateIP(self, ip):
+    def annotateIP(self, ip):
         '''
-        Using an IP, anotate it if possible
+        Using an IP, annotate it if possible
         '''
         if ip in self.IP2URL:
             ip = ip + " (" + self.IP2URL[ip] +")"
