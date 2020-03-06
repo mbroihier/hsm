@@ -24,7 +24,9 @@ a {
 body input,body label {
     display: block;
 }
-
+input[type="checkbox" i] {
+    margin: 1px 0.8ex;
+}
 #ownAxis input {
     float: left;
 }
