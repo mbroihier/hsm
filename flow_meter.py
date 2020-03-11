@@ -19,7 +19,6 @@ class PseudoPipe():
         Constructor
         '''
         self.log_file = "/var/log/kern.log"
-        self.log_file = "kern.log"
         self.in_flow_pipe = open(self.log_file, "r")
         self.packet_length = re.compile(r"LEN=(\d+)")
         self.forward_packet = re.compile(r"FWD:")
