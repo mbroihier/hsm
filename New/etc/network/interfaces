@@ -9,7 +9,9 @@ source-directory /etc/network/interfaces.d
 auto lo
 iface lo inet loopback
 
-iface eth0 inet manual
+#iface eth0 inet manual
+allow-hotplug eth0
+iface eth0 inet dhcp
 allow-hotplug usb0
 allow-hotplug usb1
 iface usb0 inet dhcp
