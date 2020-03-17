@@ -34,7 +34,8 @@ window.onload = function(){
   $.plot($("#placeholder"),arrayOfObjects,options);
   $("#placeholder").bind("plothover", function(event, pos, item) {
     if (item) {
-      $("#rawData")[0].innerHTML = item.datapoint[1];
+        $("#rawData")[0].innerHTML = item.datapoint[1] + "<br>" + arrayOfObjects[item.seriesIndex].label;
+        console.log(item, item.datapoint[0], item.datapoint[1]);
     }});
   $("#placeholder").bind("plotclick", function(event, pos, item) {
     if (item == null) return;
