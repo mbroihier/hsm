@@ -129,7 +129,7 @@ app.post("/process_new_logs.html", function(request, response, next) {
     console.log("doing post processing");
     let date = new Date();
     let filePrefix = "plot_" + (date.getMonth()+1) + "-" + date.getDate() + "-" + (1900 + date.getYear());
-    execSync("./monitor_data_collection.py /var/log/kern.log " + filePrefix);
+    execSync("./process_iptable_logs.py /var/log/kern.log " + filePrefix);
     execSync("./annotate_plot_files")
     response.redirect("/");
     next();

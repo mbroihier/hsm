@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 '''
-Monitor Data Collection
+Process the logs produced by iptables
 '''
 import getopt
 import json
-import os
 import re
 import sys
-import time
 
-class MonitorLogToJS(object):
+class MonitoredLogToJS():
     '''
     Class that handles the parsing of the monitor log into Javascript plot snippets
     '''
@@ -18,19 +16,42 @@ class MonitorLogToJS(object):
         Constructor
         '''
         self.file_handle = open(log_file, "r")
-        self.plot_info_file = plot_info_file.replace(".js","")
+        self.plot_info_file = plot_info_file.replace(".js", "")
         self.boot = 1
         self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
         self.series = {}
+        self.compacted_series = {}
         self.series["all"] = []
         self.is_forward = re.compile(r" FWD")
-        self.is_inbound = re.compile(r"IN=wlan")
-        self.is_outbound = re.compile(r"IN=usb")
         self.packet_length = re.compile(r"LEN=(\d+)")
         self.source = re.compile(r"SRC=([0-9\.]+)")
         self.destination = re.compile(r"DST=([0-9\.]+)")
         self.local_network = re.compile(r"192.168.100")
         self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
+
+
+    def compact_collected_link_information(self):
+        '''
+        Compact the series information so that it can display in reasonable time
+        '''
+        total_bytes = self.series['all'][-1][1]
+        for link in self.series:
+            if not '<-->' in link:
+                if self.series[link][-1][1] < total_bytes:
+                    total_bytes = self.series[link][-1][1]
+        threshold = int(0.03 * total_bytes)
+
+        for link in self.series:
+            points = len(self.series[link])
+            link_bytes = self.series[link][-1][1]
+            if link_bytes > threshold:
+                delta = points // 1000
+                if delta == 0:
+                    delta = 1
+                self.compacted_series[link] = []
+                points = min(points, 1000)
+                for offset in range(points):
+                    self.compacted_series[link].append(self.series[link][offset*delta])
 
     def store_by_source_and_destination(self, source, destination, time_stamp, packet_length):
         '''
@@ -49,7 +70,8 @@ class MonitorLogToJS(object):
             if self.local_network.search(destination):
                 path = destination + "<-->" + source
                 if destination in self.series:
-                    self.series[destination].append([time_stamp, self.series[destination][-1][1] + packet_length])
+                    self.series[destination].append(
+                        [time_stamp, self.series[destination][-1][1] + packet_length])
                 else:
                     self.series[destination] = []
                     self.series[destination].append([time_stamp, packet_length])
@@ -61,19 +83,17 @@ class MonitorLogToJS(object):
         else:
             self.series[path] = []
             self.series[path].append([time_stamp, packet_length])
-        
+
     def parse_log(self):
         '''
         Parse the log file into JSON
         '''
         line = self.file_handle.readline().strip()
-        incoming_total = 0
-        outgoing_total = 0
         all_bytes = 0
         next_time_stamp = 0
         offset = 0
         last_time_stamp = 0
-        
+
         while line != "":
             if self.is_forward.search(line): # this is a trace with data being forwarded
                 match = self.packet_length.search(line)
@@ -93,8 +113,8 @@ class MonitorLogToJS(object):
                     next_time_stamp = 0
                     offset = 0
                     last_time_stamp = 0
-                    
-                last_time_stamp = time_stamp
+
+                    last_time_stamp = time_stamp
                 time_stamp += offset
                 if time_stamp >= next_time_stamp:
                     self.series["all"].append([time_stamp, all_bytes])
@@ -106,8 +126,9 @@ class MonitorLogToJS(object):
         '''
         Write JavaScript file
         '''
+        self.compact_collected_link_information()
         javascript_string = "var collectedData = JSON.parse('"
-        javascript_string += json.dumps(self.series)
+        javascript_string += json.dumps(self.compacted_series)
         javascript_string += "');"
         self.output_file.write(javascript_string)
         self.output_file.close()
@@ -116,14 +137,17 @@ class MonitorLogToJS(object):
         '''
         Write intermediate JavaScript file
         '''
+        self.compact_collected_link_information()
         javascript_string = "var collectedData = JSON.parse('"
-        javascript_string += json.dumps(self.series)
+        javascript_string += json.dumps(self.compacted_series)
         javascript_string += "');"
         self.output_file.write(javascript_string)
         self.output_file.close()
         self.boot += 1
+        print(self.compacted_series)
         self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
         self.series = {}
+        self.compacted_series = {}
         self.series["all"] = []
 
 def main():
@@ -132,14 +156,11 @@ def main():
     '''
     source = ""
     destination = ""
-    file_type = "json"
-    help_string = "monitor_data_collection.py <file to convert> <plot_file_prefix>"
+    help_string = "process_iptable_logs.py <file to convert> <plot_file_prefix>"
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", ["js"])
+        opts, args = getopt.getopt(sys.argv[1:], "", [])
         for opt, arg in opts:
-            if  opt == "--js":
-                file_type = "javascript"
-            else:
+            if  opt:
                 print(help_string)
                 sys.exit(-1)
         for arg in args:
@@ -154,10 +175,9 @@ def main():
     except getopt.GetoptError:
         print(help_string)
         sys.exit(-1)
-    log_to_json = MonitorLogToJS(source, destination)
+    log_to_json = MonitoredLogToJS(source, destination)
     log_to_json.parse_log()
     log_to_json.write()
 
 if __name__ == '__main__':
     main()
-
