@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+'''
+Convert IP address to name
+'''
+import sys
+
+import url_ip_utils
+
+def main():
+    '''
+    Annotate an IP address
+    '''
+    database = url_ip_utils.lookup_url_ip()
+    if len(sys.argv) > 1:
+        ip_address = sys.argv[1]
+        annotated_ip = database.annotateIP(ip_address)
+        print(annotated_ip)
+    else:
+        print("Usage: annotate_ip <IP address>")
+
+if __name__ == '__main__':
+    main()
