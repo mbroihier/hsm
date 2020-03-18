@@ -20,9 +20,7 @@ class PseudoPipe():
         '''
         self.log_file = "/var/log/kern.log"
         self.in_flow_pipe = open(self.log_file, "r")
-        self.packet_length = re.compile(r"LEN=(\d+)")
-        self.forward_packet = re.compile(r"FWD:")
-        self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
+        self.get_info = self.forward_packet = re.compile(r"\s\[ *(\d+\.\d+)\]\sFWD:.+?\sLEN=(\d+)")
         self.inode = os.stat(self.log_file)[stat.ST_INO]
 
     def get_a_filtered_line(self, first_time=False):
@@ -74,14 +72,12 @@ class PseudoPipe():
         next_time_stamp = 0
         all_bytes = 0
         while line != "":
-            match = self.packet_length.search(line)
-            packet_length = int(match.group(1))
+            match = self.get_info.search(line)
+            packet_length = int(match.group(2))
             all_bytes += packet_length
-            match = self.time_stamp.search(line)
             time_stamp = float(match.group(1))
             if time_stamp < last_time_stamp:
                 offset += last_time_stamp + 1000
-                #print("bumping offset: " + str(offset))
             last_time_stamp = time_stamp
             time_stamp += offset
             if time_stamp >= next_time_stamp:
