@@ -11,39 +11,42 @@ class MonitoredLogToJS():
     '''
     Class that handles the parsing of the monitor log into Javascript plot snippets
     '''
-    def __init__(self, log_file, plot_info_file):
+    def __init__(self, log_file, plot_info_file_path):
         '''
         Constructor
         '''
         self.file_handle = open(log_file, "r")
-        self.plot_info_file = plot_info_file.replace(".js", "")
+        self.plot_info_file_path = plot_info_file_path
         self.boot = 1
-        self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
         self.series = {}
         self.compacted_series = {}
         self.series["all"] = []
-        self.is_forward = re.compile(r" FWD")
-        self.packet_length = re.compile(r"LEN=(\d+)")
-        self.source = re.compile(r"SRC=([0-9\.]+)")
-        self.destination = re.compile(r"DST=([0-9\.]+)")
+        self.is_forward = re.compile(r" \[ *(\d+\.\d+)\]\s+?FWD:.+?\sSRC=([0-9\.]+)\s+?DST=([0-9\.]+)\s+?LEN=(\d+)\s")
         self.local_network = re.compile(r"192.168.100")
-        self.time_stamp = re.compile(r" \[ *(\d+\.\d+)\]")
-
 
     def compact_collected_link_information(self):
         '''
         Compact the series information so that it can display in reasonable time
         '''
-        total_bytes = self.series['all'][-1][1]
+        link_threshold = {}
         for link in self.series:
             if not '<-->' in link:
-                if self.series[link][-1][1] < total_bytes:
-                    total_bytes = self.series[link][-1][1]
-        threshold = int(0.03 * total_bytes)
+                link_threshold[link] = int(0.0025 * self.series[link][-1][1])
 
         for link in self.series:
             points = len(self.series[link])
             link_bytes = self.series[link][-1][1]
+            if link in link_threshold:
+                threshold = link_threshold[link]
+            else:
+                local_lan_host = link.split("<-->")[0]
+                if local_lan_host in link_threshold:
+                    threshold = link_threshold[local_lan_host]
+                else:
+                    # this should not happen
+                    threshold = 0
+                    print(local_lan_host, link)
+
             if link_bytes > threshold:
                 delta = points // 1000
                 if delta == 0:
@@ -91,31 +94,23 @@ class MonitoredLogToJS():
         line = self.file_handle.readline().strip()
         all_bytes = 0
         next_time_stamp = 0
-        offset = 0
         last_time_stamp = 0
 
         while line != "":
-            if self.is_forward.search(line): # this is a trace with data being forwarded
-                match = self.packet_length.search(line)
-                packet_length = int(match.group(1))
+            match = self.is_forward.search(line)
+            if match: # this is a trace with data being forwarded
+                packet_length = int(match.group(4))
                 all_bytes += packet_length
-                match = self.source.search(line)
-                source = match.group(1)
-                match = self.destination.search(line)
-                destination = match.group(1)
-                match = self.time_stamp.search(line)
+                source = match.group(2)
+                destination = match.group(3)
                 time_stamp = float(match.group(1))
                 if time_stamp < last_time_stamp:
-                    #offset += last_time_stamp + 1000
-                    #print("bumping offset: " + str(offset))
-                    self._write()
+                    # a boot has been detected, write previously collected information
+                    # and then continue with next boot section
+                    self.write()
                     all_bytes = 0
                     next_time_stamp = 0
-                    offset = 0
-                    last_time_stamp = 0
-
                     last_time_stamp = time_stamp
-                time_stamp += offset
                 if time_stamp >= next_time_stamp:
                     self.series["all"].append([time_stamp, all_bytes])
                     next_time_stamp = time_stamp + 1.0
@@ -124,28 +119,16 @@ class MonitoredLogToJS():
 
     def write(self):
         '''
-        Write JavaScript file
+        Write JavaScript file for one "boot" section of the log
         '''
         self.compact_collected_link_information()
         javascript_string = "var collectedData = JSON.parse('"
         javascript_string += json.dumps(self.compacted_series)
         javascript_string += "');"
-        self.output_file.write(javascript_string)
-        self.output_file.close()
-
-    def _write(self):
-        '''
-        Write intermediate JavaScript file
-        '''
-        self.compact_collected_link_information()
-        javascript_string = "var collectedData = JSON.parse('"
-        javascript_string += json.dumps(self.compacted_series)
-        javascript_string += "');"
-        self.output_file.write(javascript_string)
-        self.output_file.close()
+        output_file = open(self.plot_info_file_path + "_" + str(self.boot) + ".js", "w")
+        output_file.write(javascript_string)
+        output_file.close()
         self.boot += 1
-        print(self.compacted_series)
-        self.output_file = open(self.plot_info_file + "_" + str(self.boot) + ".js", "w")
         self.series = {}
         self.compacted_series = {}
         self.series["all"] = []
