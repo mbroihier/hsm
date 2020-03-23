@@ -3,14 +3,14 @@
 Domain Name Utilities - convert domain name to IP and IP to domain name
 '''
 import re
-import os
 import pickle
 import sqlite3
 import subprocess
+import sys
 import threading
 import time
 
-class lookup_url_ip(object):
+class LookupUrlIp():
     '''
     Base class of URL / IP database
     '''
@@ -18,34 +18,39 @@ class lookup_url_ip(object):
         '''
         Constructor
         '''
-        self.URL2IP = {}
-        self.IP2URL = {}
+        self.url2ip = {}
+        self.ip2url = {}
         try:
             # If directed to use the preprocessed database, load them
-            fileHandle = open("URL2IP.db", "rb")
-            self.URL2IP = pickle.load(fileHandle)
-            fileHandle.close()
-            fileHandle = open("IP2URL.db", "rb")
-            self.IP2URL = pickle.load(fileHandle)
-            fileHandle.close()
+            file_handle = open("url2ip.db", "rb")
+            self.url2ip = pickle.load(file_handle)
+            file_handle.close()
+            file_handle = open("ip2url.db", "rb")
+            self.ip2url = pickle.load(file_handle)
+            file_handle.close()
         except FileNotFoundError:
             print("Using empty database as a start")
 
-    def dumpDatabase(self):
+    def dump_database(self):
         '''
-        Method to dump the conversion databases
+        Method to dump/store (pickle) the conversion databases
         '''
-        print(self.URL2IP, self.IP2URL)
+        file_handle = open("url2ip.db", "wb")
+        pickle.dump(self.url2ip, file_handle)
+        file_handle.close()
+        file_handle = open("ip2url.db", "wb")
+        pickle.dump(self.ip2url, file_handle)
+        file_handle.close()
 
-    def annotateIP(self, ip):
+    def annotate_ip(self, ip_address):
         '''
         Using an IP, annotate it if possible
         '''
-        if ip in self.IP2URL:
-            ip = ip + " (" + self.IP2URL[ip] +")"
-        return ip
+        if ip_address in self.ip2url:
+            ip_address = ip_address + " (" + self.ip2url[ip_address] +")"
+        return ip_address
 
-class build_url_ip_db(lookup_url_ip):
+class BuildUrlIpDb(LookupUrlIp):
     '''
     Class that handles creation and update of the URL / IP database
     '''
@@ -53,62 +58,66 @@ class build_url_ip_db(lookup_url_ip):
         '''
         Constructor
         '''
-        super(build_url_ip_db, self).__init__()
+        super(BuildUrlIpDb, self).__init__()
         self.lock = threading.Lock()
         self.lookup_type = lookup_type
         self.file_path = file_path
 
-        #Make an iterable object that contains URL paths, this can come from a file or from the pihole database
+        # Make an iterable object that contains URL paths
+        # This can come from a file or from the pihole database
         if self.file_path is None:
             connection = sqlite3.connect('/etc/pihole/pihole-FTL.db')
             cursor = connection.cursor()
-            iterableObject = []
-            uniqueURLs = {}
+            iterable_object = []
+            unique_urls = {}
             allurls = cursor.execute('select domain from queries order by domain ;')
             for tuple_ in allurls:
-                if tuple_[0] not in uniqueURLs:
-                    uniqueURLs[tuple_[0]] = ""
-                    iterableObject.append(tuple_[0])
+                # The first condition below is not necessary in clean Pi-hole sqlite3 databases
+                if ("+noid" not in tuple_[0]) and (tuple_[0] not in unique_urls):
+                    unique_urls[tuple_[0]] = ""
+                    iterable_object.append(tuple_[0])
         else:
             # If a URL file is given, use this to determine which URLs to lookup for the database
-            iterableObject = open(self.file_path, "r")
+            iterable_object = open(self.file_path, "r")
 
         threads = []
-        if iterableObject is not None:
+        if iterable_object is not None:
             # Given URLs to lookup, do so using concurrent nslookups
-            for line in iterableObject:
+            for line in iterable_object:
                 url = line.strip()
                 if self.lookup_type is None:
-                    threads.append(concurrentDig(url, self))
+                    threads.append(ConcurrentDig(url, self))
                 else:
-                    threads.append(concurrentNSLookup(url, self))
-                threads[-1].start()
+                    threads.append(ConcurrentNSLookup(url, self))
+                try:
+                    while threading.activeCount() > 12:
+                        time.sleep(0.1)
+                    threads[-1].start()
+                except RuntimeError as error:
+                    print("Runtime error:", error)
+                    print("Running threads:", len(threads))
+                    sys.exit(-1) # need to terminate, somethings not right
             for thread in threads:
                 thread.join()
             print("Lookup performed on", len(threads), "urls")
-            fileHandle = open("URL2IP.db", "wb")
-            pickle.dump(self.URL2IP, fileHandle)
-            fileHandle.close()
-            fileHandle = open("IP2URL.db", "wb")
-            pickle.dump(self.IP2URL, fileHandle)
-            fileHandle.close()
         else:
             print("Something went very wrong in the database build")
+            sys.exit(-1) # need to terminate, somethings not right
 
 
-class concurrentNSLookup(threading.Thread):
+class ConcurrentNSLookup(threading.Thread):
     '''
     Concurret nslookup class - looks up one URL using nslookup
     '''
-    def __init__(self, url, commonObjects):
+    def __init__(self, url, common_objects):
         '''
         Constructor
         '''
-        super(concurrentNSLookup, self).__init__(args=(url,))
+        super(ConcurrentNSLookup, self).__init__(args=(url,))
         self.command = "/usr/bin/nslookup"
-        self.URLName = re.compile(r"^Name:")
+        self.url_name = re.compile(r"^Name:")
         self.response = re.compile(r"^Address:[^\d]+(\d+\.\d+\.\d+.\d+)")
-        self.commonObjects = commonObjects
+        self.common_objects = common_objects
 
     def run(self):
         '''
@@ -118,36 +127,36 @@ class concurrentNSLookup(threading.Thread):
         # run a subprocess that is a nslookup
         result = subprocess.run([self.command, url], stdout=subprocess.PIPE)
         paragraph = result.stdout.decode('utf-8')
-        foundName = False
+        found_name = False
         # parse the reply, putting any found URL into the database
-        for paragraphLine in paragraph.split("\n"):
-            match = self.URLName.search(paragraphLine)
+        for paragraph_line in paragraph.split("\n"):
+            match = self.url_name.search(paragraph_line)
             if match:
-                foundName = True
+                found_name = True
             else:
-                if foundName:
-                    match = self.response.search(paragraphLine)
+                if found_name:
+                    match = self.response.search(paragraph_line)
                     if match:
-                        ip = match.group(1)
-                        self.commonObjects.lock.acquire()
-                        self.commonObjects.URL2IP[url] = ip
+                        ip_address = match.group(1)
+                        self.common_objects.lock.acquire()
+                        self.common_objects.url2ip[url] = ip_address
                         # Note, the below code may overwrite a url definition
-                        self.commonObjects.IP2URL[ip] = url
-                        self.commonObjects.lock.release()
+                        self.common_objects.ip2url[ip_address] = url
+                        self.common_objects.lock.release()
 
-class concurrentDig(threading.Thread):
+class ConcurrentDig(threading.Thread):
     '''
     Concurret dig class - looks up one URL using dig
     '''
-    def __init__(self, url, commonObjects):
+    def __init__(self, url, common_objects):
         '''
         Constructor
         '''
-        super(concurrentDig, self).__init__(args=(url,))
+        super(ConcurrentDig, self).__init__(args=(url,))
         self.command = "/usr/bin/dig"
         self.answer_section = re.compile(r"^;; ANSWER SECTION:")
         self.name_ip_pair = re.compile(r"^([^\s]+)\s+\d+\s+IN\s+[^\s]+\s+(\d+\.\d+\.\d+.\d+)")
-        self.commonObjects = commonObjects
+        self.common_objects = common_objects
 
     def run(self):
         '''
@@ -155,32 +164,34 @@ class concurrentDig(threading.Thread):
         '''
         url = self._args[0]
         # run a subprocess that is a nslookup
-        result = subprocess.run([self.command, url], stdout=subprocess.PIPE)
+        result = subprocess.run(
+            [self.command, "+noidnout", "+noidnin", url], stdout=subprocess.PIPE)
         paragraph = result.stdout.decode('utf-8')
         found_answer_section = False
         # parse the reply, putting any found URL into the database
-        for paragraphLine in paragraph.split("\n"):
-            match = self.answer_section.search(paragraphLine)
+        for paragraph_line in paragraph.split("\n"):
+            match = self.answer_section.search(paragraph_line)
             if match:
                 found_answer_section = True
             else:
                 if found_answer_section:
-                    match = self.name_ip_pair.search(paragraphLine)
+                    match = self.name_ip_pair.search(paragraph_line)
                     if match:
                         found_url = match.group(1).rstrip('.')
-                        ip = match.group(2)
-                        self.commonObjects.lock.acquire()
-                        self.commonObjects.URL2IP[url] = ip
-                        self.commonObjects.IP2URL[ip] = found_url
-                        print(ip, found_url)
-                        self.commonObjects.lock.release()
+                        ip_address = match.group(2)
+                        self.common_objects.lock.acquire()
+                        self.common_objects.url2ip[url] = ip_address
+                        self.common_objects.ip2url[ip_address] = found_url
+                        print(ip_address, found_url)
+                        self.common_objects.lock.release()
 
 def main():
     '''
-    test driver
+    test driver & core database build method
     '''
     start_time = time.time()
-    database = build_url_ip_db()
+    database = BuildUrlIpDb() #build via constructor
+    database.dump_database()  #store on disk
     end_time = time.time()
     print("Processing took", end_time - start_time, "seconds")
 if __name__ == '__main__':
