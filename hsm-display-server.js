@@ -53,7 +53,7 @@ setInterval(function(){
         dataSent = true;
       }
     }
-    if (dataSent) {
+    if (dataSent || ! relay.length) {
         pipe_data = [];
     }
   },5000);
