@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+'''
+Build the URL to IP and IP to URL databases
+'''
 import url_ip_utils
 
 url_ip_utils.main()
-
-

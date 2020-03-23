@@ -6,6 +6,7 @@ import getopt
 import json
 import re
 import sys
+import time
 
 class MonitoredLogToJS():
     '''
@@ -21,8 +22,10 @@ class MonitoredLogToJS():
         self.series = {}
         self.compacted_series = {}
         self.series["all"] = []
-        self.is_forward = re.compile(r" \[ *(\d+\.\d+)\]\s+?FWD:.+?\sSRC=([0-9\.]+)\s+?DST=([0-9\.]+)\s+?LEN=(\d+)\s")
-        self.local_network = re.compile(r"192.168.100")
+#        self.is_forward = re.compile(r" \[ *(\d+\.\d+)\]\s+?FWD:.+?\sSRC=([0-9\.]+)\s+?DST=([0-9\.]+)\s+?LEN=(\d+)\s")
+        self.is_forward = re.compile(r" \[(\d+\.\d+)\]\sFWD:.+?\sSRC=([0-9\.]+)\sDST=([0-9\.]+)\sLEN=(\d+)\s")
+#        self.local_network = re.compile(r"192.168.100")
+        self.local_network = re.compile(r"192.168")
 
     def compact_collected_link_information(self):
         '''
@@ -47,14 +50,21 @@ class MonitoredLogToJS():
                     threshold = 0
                     print(local_lan_host, link)
 
+            points_in_compacted_range = 1000
             if link_bytes > threshold:
-                delta = points // 1000
-                if delta == 0:
-                    delta = 1
+                delta = (points - 1) / points_in_compacted_range
+                if delta <= 1.0:
+                    delta = 1.0
                 self.compacted_series[link] = []
-                points = min(points, 1000)
+                points = min(points, points_in_compacted_range)
                 for offset in range(points):
-                    self.compacted_series[link].append(self.series[link][offset*delta])
+                    try:
+                        index = int(offset * delta)
+                        self.compacted_series[link].append(self.series[link][index])
+                    except IndexError:
+                        print(index)
+
+                self.compacted_series[link].append(self.series[link][-1])
 
     def store_by_source_and_destination(self, source, destination, time_stamp, packet_length):
         '''
@@ -96,14 +106,14 @@ class MonitoredLogToJS():
         next_time_stamp = 0
         last_time_stamp = 0
 
+        start = time.time()
         while line != "":
             match = self.is_forward.search(line)
             if match: # this is a trace with data being forwarded
-                packet_length = int(match.group(4))
+                time_stamp, source, destination, packet_length = match.group(1, 2, 3, 4)
+                packet_length = int(packet_length)
+                time_stamp = float(time_stamp)
                 all_bytes += packet_length
-                source = match.group(2)
-                destination = match.group(3)
-                time_stamp = float(match.group(1))
                 if time_stamp < last_time_stamp:
                     # a boot has been detected, write previously collected information
                     # and then continue with next boot section
@@ -113,9 +123,13 @@ class MonitoredLogToJS():
                     last_time_stamp = time_stamp
                 if time_stamp >= next_time_stamp:
                     self.series["all"].append([time_stamp, all_bytes])
-                    next_time_stamp = time_stamp + 1.0
+                    next_time_stamp = time_stamp + 30.0
                 self.store_by_source_and_destination(source, destination, time_stamp, packet_length)
+            else:
+                print("Rejecting", line.rstrip())
             line = self.file_handle.readline().strip()
+        self.series["all"].append([time_stamp, all_bytes])
+        print("parsing time:", time.time() - start)
 
     def write(self):
         '''

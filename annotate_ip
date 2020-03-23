@@ -10,10 +10,10 @@ def main():
     '''
     Annotate an IP address
     '''
-    database = url_ip_utils.lookup_url_ip()
+    database = url_ip_utils.LookupUrlIp()
     if len(sys.argv) > 1:
         ip_address = sys.argv[1]
-        annotated_ip = database.annotateIP(ip_address)
+        annotated_ip = database.annotate_ip(ip_address)
         print(annotated_ip)
     else:
         print("Usage: annotate_ip <IP address>")

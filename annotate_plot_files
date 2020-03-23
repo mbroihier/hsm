@@ -11,29 +11,29 @@ def main():
     '''
     Annotate all of the plot files in this directory - if possible
     '''
-    database = url_ip_utils.lookup_url_ip()
+    database = url_ip_utils.LookupUrlIp()
     list_of_files = os.listdir("./")
     plot_file = re.compile(r"plot_.+\.js")
-    linkBundles = re.compile(r"(\d+\.\d+\.\d+.\d+<-->\d+\.\d+\.\d+\.\d+)\"")
+    link_bundles = re.compile(r"(\d+\.\d+\.\d+.\d+<-->\d+\.\d+\.\d+\.\d+)\"")
     for file_candidate in list_of_files:
         if plot_file.search(file_candidate):
-           print(file_candidate) 
-           fileHandle = open(file_candidate, "r")
-           bigLine = ""
-           for line in fileHandle:
-               bigLine += line
-           fileHandle.close()
-           listOfBundles = linkBundles.findall(bigLine)
-           for bundle in listOfBundles:
-               ip1, ip2 = bundle.split("<-->")
-               annotatedIP1 = database.annotateIP(ip1)
-               annotatedIP2 = database.annotateIP(ip2)
-               annotatedTarget = annotatedIP1 + "<-->" + annotatedIP2
-               bigLine = bigLine.replace('"' + bundle + '"', '"' + annotatedTarget + '"', 1)
+            print(file_candidate)
+            file_handle = open(file_candidate, "r")
+            big_line = ""
+            for line in file_handle:
+                big_line += line
+            file_handle.close()
+            list_of_bundles = link_bundles.findall(big_line)
+            for bundle in list_of_bundles:
+                ip1, ip2 = bundle.split("<-->")
+                annotated_ip1 = database.annotate_ip(ip1)
+                annotated_ip2 = database.annotate_ip(ip2)
+                annotated_target = annotated_ip1 + "<-->" + annotated_ip2
+                big_line = big_line.replace('"' + bundle + '"', '"' + annotated_target + '"', 1)
 
-           # overwrite the file with an anotated version
-           fileHandle = open(file_candidate, "w")
-           fileHandle.write(bigLine)
-           fileHandle.close()
+            # overwrite the file with an anotated version
+            file_handle = open(file_candidate, "w")
+            file_handle.write(big_line)
+            file_handle.close()
 if __name__ == '__main__':
     main()
