@@ -22,9 +22,7 @@ class MonitoredLogToJS():
         self.series = {}
         self.compacted_series = {}
         self.series["all"] = []
-#        self.is_forward = re.compile(r" \[ *(\d+\.\d+)\]\s+?FWD:.+?\sSRC=([0-9\.]+)\s+?DST=([0-9\.]+)\s+?LEN=(\d+)\s")
-        self.is_forward = re.compile(r" \[(\d+\.\d+)\]\sFWD:.+?\sSRC=([0-9\.]+)\sDST=([0-9\.]+)\sLEN=(\d+)\s")
-#        self.local_network = re.compile(r"192.168.100")
+        self.is_forward =  re.compile(r" \[\s*(\d+\.\d+)\]\sFWD:.+?\sSRC=([0-9\.]+)\sDST=([0-9\.]+)\sLEN=(\d+)\s")
         self.local_network = re.compile(r"192.168")
 
     def compact_collected_link_information(self):
@@ -120,7 +118,7 @@ class MonitoredLogToJS():
                     self.write()
                     all_bytes = 0
                     next_time_stamp = 0
-                    last_time_stamp = time_stamp
+                last_time_stamp = time_stamp
                 if time_stamp >= next_time_stamp:
                     self.series["all"].append([time_stamp, all_bytes])
                     next_time_stamp = time_stamp + 30.0
