@@ -72,8 +72,7 @@ class BuildUrlIpDb(LookupUrlIp):
             unique_urls = {}
             allurls = cursor.execute('select domain from queries order by domain ;')
             for tuple_ in allurls:
-                # The first condition below is not necessary in clean Pi-hole sqlite3 databases
-                if ("+noid" not in tuple_[0]) and (tuple_[0] not in unique_urls):
+                if tuple_[0] not in unique_urls:
                     unique_urls[tuple_[0]] = ""
                     iterable_object.append(tuple_[0])
         else:
