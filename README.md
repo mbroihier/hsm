@@ -2,7 +2,7 @@
 
 This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.  I've installed this on Stretch and Buster versions of Raspbian.  When installing this, I recommend that you use the PI that you intend to use as the hotspot.  Using this approach avoids driver installation issues that make hostapd inoperable.  Since my initial release, I've added instructions for installing Pi-hole.  I did this to reduce traffic when using my mobile data.  I also did this to have access to URLs from the Pi-hole database.  I use this information to map IP addresses to URLs to help clarify what applications are using large amounts of data. 
 
-The lastest release of HSM to GITHUB has changes to real time monitoring to fix a hang when logs rotate.  Additionally, several design and name changes were made to clarify purpose, functionality, and reduce stress on browsers when they pull up utilization graphs.  With better response time and more information displayed on data point hovers, users should find the display more useful in tracking down data hogs.
+The latest release of HSM to GITHUB has changes to real time monitoring to fix a hang when logs rotate.  Additionally, several design and name changes were made to clarify purpose, functionality, and reduce stress on browsers when they pull up utilization graphs.  With better response time and more information displayed on data point hovers, users should find the display more useful in tracking down data hogs.
 
 ![Alt text](/main.png?raw=true "Main page of file server")
 ![Alt text](/detail.png?raw=true "Detailed Graph of a Log")
@@ -18,7 +18,7 @@ Installation
       Note that initially you will want to be on your home's network 
       with an ethernet cable so that you can update your image and
       install necessary packages from the Internet and won't be affected
-      by the adustments made to the wlan0 interface.
+      by the adjustments made to the wlan0 interface.
   2)  Put the SD card in your target PI and boot it.
   3)  Change the password.
   4)  Change the node name to hsm.
@@ -45,7 +45,7 @@ Installation
  20)  Reboot, once booted, the hotspot and hotspot monitor should be active.  If you do not want Pi-hole, stop here.
       - sudo shutdown -r now
  21)  Using a device attached to the hotspot network (it should be available after boot), log into the hotspot (192.168.100.1).
- 22)  Tether your phone to the Raspberry PI using an USB inteface cable with appropriate adapters.  At this point, to reduce consumption of your mobile data, you want your phone connected to your home wifi.  
+ 22)  Tether your phone to the Raspberry PI using an USB interface cable with appropriate adapters.  At this point, to reduce consumption of your mobile data, you want your phone connected to your home wifi.  
  23)  Stop dnsmasq.  This is being done so that during the install of Pi-hole, the disabling of dnsmasq does not terminate DNS functionality.
       - sudo systemctl stop dnsmasq
  24)  Check to see if you have access to a name server
@@ -60,12 +60,12 @@ Installation
  31)  When questioned, select the wlan0 lan, and set your host address and gateway to 192.168.100.1 (from your /etc/network/interfaces file).
  32)  When complete, change your Pi-hole password to something you can remember
       - pihole -a -p
- 33)  Connect a device with a browser to your network and bring up the brower and navigate to the Pi-hole admin console (http://192.168.100.1/admin) and log into the administrator account.
+ 33)  Connect a device with a browser to your network and bring up the browser and navigate to the Pi-hole admin console (http://192.168.100.1/admin) and log into the administrator account.
  34)  Click on Setup and setup the DHCP server (enable it and save it - maybe adjust your range depending on the number of clients you want to support).
  35)  After logging out of the Pi-hole admin account, reboot the raspberry pi from your login console.  After the PI comes up, devices connecting to your hotspot will automatically have their requests to known ad servers filtered out by Pi-hole.
 
-This procedure has been used with PI 0's, PI 3's, and PI 4's.  On the PI 3's, I've installed Stretch "lite" Raspbian.  On PI 0' and PI 4's I've installed Buster "lite" Raspbian.
+This procedure has been used with PI 0's, PI 3's, and PI 4's.  On the PI 3's, I've installed Stretch "lite" Raspbian.  On PI 0's and PI 4's I've installed Buster "lite" Raspbian.
 
 **** Note ****
-When hsm is first installed, annotation (translation of IPs to URLs) is effectively disabled.  This is because Pi-hole has not built up its database and the build_url_ip_db script has not been run.  Depending on how many URLs have been collected by Pi-hole, build_url_ip_db can take some time to run (for 5000-6000 URLs I've seen it take ~ 100 seconds on a PI 0).  build_url_ip_db must be run (from the hsm directory) to annotate IP addresses on graphs. At the moment, I do this by hand on the hsm node prior to my initiation of generating new graph/plot files ("Process New Logs") from the HSM Display Server main page.  I'm still working on improving the annotation process so that logging onto the hsm node is not necessary after the applicance is installed.  Also note that it is never necessary to run build_url_ip_db if automatic annotation is not desired.
+When hsm is first installed, annotation (translation of IPs to URLs) is effectively disabled.  This is because Pi-hole has not built up its database and the build_url_ip_db script has not been run.  Depending on how many URLs have been collected by Pi-hole, build_url_ip_db can take some time to run (for 5000-6000 URLs I've seen it take ~ 100 seconds on a PI 0).  build_url_ip_db must be run to annotate IP addresses on graphs. On the "Process New Logs" web page, if you check the update annotation check box prior to pressing the yes button, the annotation database will be refreshed/built.
 

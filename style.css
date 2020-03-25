@@ -22,7 +22,6 @@ li {
 body {
     font-family: verdana;
     color: #000000;
-    background-image: url(IMG_3282r2.JPG);
 }
 
 a {
@@ -32,6 +31,7 @@ a {
 
 body input,body label {
     display: block;
+    float: left;
 }
 
 #ownAxis input {

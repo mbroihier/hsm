@@ -123,13 +123,17 @@ app.post("/process_new_logs.html", function(request, response, next) {
     console.log(request.body);
     if (typeof request.body.yes === "undefined") {
         console.log("not doing post processing");
-	response.redirect("/");
-	return;
+        response.redirect("/");
+        return;
     }
-    console.log("doing post processing");
+    console.log("processing kernel logs");
     let date = new Date();
     let filePrefix = "plot_" + (date.getMonth()+1) + "-" + date.getDate() + "-" + (1900 + date.getYear());
     execSync("./process_iptable_logs.py /var/log/kern.log " + filePrefix);
+    if (! (typeof request.body.box === "undefined")) {
+        console.log("update the annotation database");
+        execSync("./build_url_ip_db");
+    }
     execSync("./annotate_plot_files")
     response.redirect("/");
     next();
