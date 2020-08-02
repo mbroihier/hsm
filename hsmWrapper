@@ -1,4 +1,4 @@
 #!/bin/bash
-sudo /sbin/iptables-restore < /home/pi/hsm/iptables.ipv4.nat.wlogs
 cd /home/pi/hsm
+sudo nft -f iptables.ipv4.nat.wlogs.nft
 node hsm-display-server.js

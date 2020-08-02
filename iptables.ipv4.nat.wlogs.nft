@@ -1,0 +1,22 @@
+# Translated by iptables-restore-translate v1.8.2 on Fri Jul 17 23:52:02 2020
+add table ip filter
+add chain ip filter INPUT { type filter hook input priority 0; policy accept; }
+add chain ip filter FORWARD { type filter hook forward priority 0; policy accept; }
+add chain ip filter OUTPUT { type filter hook output priority 0; policy accept; }
+add rule ip filter FORWARD counter log prefix "FWD:"
+add rule ip filter FORWARD iifname "usb0" oifname "wlan0" ct state related,established  counter accept
+add rule ip filter FORWARD iifname "usb1" oifname "wlan0" ct state related,established  counter accept
+add rule ip filter FORWARD iifname "eth0" oifname "wlan0" ct state related,established  counter accept
+add rule ip filter FORWARD iifname "wlan0" oifname "usb0" counter accept
+add rule ip filter FORWARD iifname "wlan0" oifname "usb1" counter accept
+add rule ip filter FORWARD iifname "wlan0" oifname "eth0" counter accept
+add rule ip filter FORWARD counter drop
+add table ip nat
+add chain ip nat PREROUTING { type nat hook prerouting priority -100; policy accept; }
+add chain ip nat INPUT { type nat hook input priority 100; policy accept; }
+add chain ip nat OUTPUT { type nat hook output priority -100; policy accept; }
+add chain ip nat POSTROUTING { type nat hook postrouting priority 100; policy accept; }
+add rule ip nat POSTROUTING oifname "usb0" counter masquerade 
+add rule ip nat POSTROUTING oifname "usb1" counter masquerade 
+add rule ip nat POSTROUTING oifname "eth0" counter masquerade 
+# Completed on Fri Jul 17 23:52:02 2020
