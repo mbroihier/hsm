@@ -1,5 +1,7 @@
 # hsm - Hotspot Monitor
 
+**** see issue 5 regarding npm and nft/nftables problems with recent changes to buster and Node.js/npm - I'm intending to simplify the install soon 
+
 This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.  I've installed this on Stretch and Buster versions of Raspbian.  When installing this, I recommend that you use the PI that you intend to use as the hotspot.  Using this approach avoids driver installation issues that make hostapd inoperable.  Since my initial release, I've added instructions for installing Pi-hole.  I did this to reduce traffic when using my mobile data.  I also did this to have access to URLs from the Pi-hole database.  I use this information to map IP addresses to URLs to help clarify what applications are using large amounts of data. 
 
 Release 1.2 of HSM to GITHUB has changes to real time monitoring to fix a hang when logs rotate.  Additionally, several design and name changes were made to clarify purpose, functionality, and reduce stress on browsers when they pull up utilization graphs.  With better response time and more information displayed on data point hovers, users should find the display more useful in tracking down data hogs.
