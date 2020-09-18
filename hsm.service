@@ -3,9 +3,9 @@ Description=Hotspot Monitor
 After=network.target
 
 [Service]
-ExecStart=/home/pi/hsm/hsmWrapper
+ExecStart=/var/www/html/hsm/hsmWrapper
 Restart=always
-RestartSec=10
+RestartSec=60
 
 [Install]
 Alias=hsm.service

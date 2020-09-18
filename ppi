@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Pseudo Package Installer - installs the git repository files that apt-get would install when installing hsm
+# This allows for a manual install that avoids the need for access to a non standard package repository.
+#
+name=$1
+password=$2
+if [ "$name" == "" ]; then
+    echo "A name for the access point must be supplied"
+    exit 1
+fi
+if [ "$password" == "" ]; then
+    echo "A password for the access point must be supplied"
+    exit 1
+fi
+install -p -D index.html -t /var/www/html/hsm
+install -p -m 644 graph.html /var/www/html/hsm
+install -p -m 644 process_new_logs.html /var/www/html/hsm
+install -p -m 644 realtime.html /var/www/html/hsm
+install -p style.css /var/www/html/hsm
+install -p graph-style.css /var/www/html/hsm
+install -p -m 644 hsm-display-server.js /var/www/html/hsm
+install -p -m 644 realtime.js /var/www/html/hsm
+install -p realtimeScript.js /var/www/html/hsm
+install -p script.js /var/www/html/hsm
+install -p flow_meter.py /var/www/html/hsm
+install -p process_iptable_logs.py /var/www/html/hsm
+install -p url_ip_utils.py /var/www/html/hsm
+install -p annotate_ip /var/www/html/hsm
+install -p annotate_plot_files /var/www/html/hsm
+install -p build_url_ip_db /var/www/html/hsm
+install -p hsmWrapper.nft /var/www/html/hsm
+install -p hsmWrapper.iptables /var/www/html/hsm
+install -p -m 644 hsm.service /lib/systemd/system
+install -p -m 644 iptables.ipv4.nat.wlogs /var/www/html/hsm
+install -p -m 644 iptables.ipv4.nat.wlogs.nft /var/www/html/hsm
+install -p complete_configuration /var/www/html/hsm
+install -p -m 644 package.json /var/www/html/hsm
+install -p -D New/etc/dhcpcd.conf -t /var/www/html/hsm/New/etc
+install -p New/etc/dnsmasq.conf /var/www/html/hsm/New/etc
+install -p New/etc/rsyslog.conf /var/www/html/hsm/New/etc
+install -p -m 644 -D New/etc/default/hostapd -t /var/www/html/hsm/New/etc/default
+install -p -m 644 -D New/etc/hostapd/hostapd.conf -t /var/www/html/hsm/New/etc/hostapd
+install -p -m 644 -D New/etc/logrotate.d/rsyslog -t /var/www/html/hsm/New/etc/logrotate.d
+install -p -m 644 -D New/etc/network/interfaces -t /var/www/html/hsm/New/etc/network
+systemctl enable hsm.service
+cd /var/www/html/hsm/
+./complete_configuration $1 $2

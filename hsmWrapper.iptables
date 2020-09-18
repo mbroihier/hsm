@@ -1,0 +1,4 @@
+#!/bin/bash
+cd /var/www/html/hsm
+sudo iptables-restore < iptables.ipv4.nat.wlogs
+node hsm-display-server.js

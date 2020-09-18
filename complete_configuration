@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# This script completes the configuration needed for the hsm "package".
+# In the case of the manual install, this script installs necessary debian packages
+# and sets the name of the access point and the password for the access point.
+# In the case where a debian package install has been performed, this script
+# updates the npm package, if necessary (and it is at the time of this writing),
+# installs nftables, if necessary, and performs some gymnastics necessary to
+# retain network connectivity that's interrupted by the package installs of
+# hostapd and dnsmasq.  When it finishes, the access point should be up and
+# users should be able to log into it from the wireless lan.  The monitor
+# should be operational, too, and listening to port 3000.
+#
+# After shutdown, connect your device to a Android phone with a USB cable, and
+# power it back up,  Assuming your cellular data is on and tethering is on,
+# you should be able to connect other devices to the access point and be connected
+# on the internet via your phone.
+#
+name=$1
+password=$2
+systemctl stop dnsmasq
+ping google.com -w3 -c1
+if [ $? -eq 1 ]; then
+    echo "You have no access to the internet - establish route or name service and attempt again"
+    exit 1
+fi
+if [ "$name" == "" ]; then
+    echo "A name for the access point must be supplied"
+    exit 1
+fi
+if [ "$password" == "" ]; then
+    echo "A password for the access point must be supplied"
+    exit 1
+fi
+/usr/bin/apt list --installed nodejs 2>/dev/null | grep nodejs
+if [ $? -eq 1 ]; then
+    /bin/echo "nodejs is not installed, installing it"
+    /usr/bin/apt-get install -y nodejs
+fi
+/usr/bin/apt list --installed npm 2>/dev/null | grep npm
+if [ $? -eq 1 ]; then
+    /bin/echo "nodejs is not installed, installing it"
+    /usr/bin/apt-get install -y npm
+fi
+cd /var/www/html/hsm
+perl -e '@vn = split(/\./,`npm -v`); (($vn[0] >= 6) && ($vn[1] >= 14) && ($vn[2] >= 8)) && exit 0; exit 1'
+if [ $? -eq 1 ]; then
+    npm i npm@latest -g
+    hash -r
+fi
+npm install
+/usr/bin/apt list --installed hostapd 2>/dev/null | grep hostapd
+if [ $? -eq 1 ]; then
+    /bin/echo "hostapd is not installed, installing it"
+    /usr/bin/apt-get install -y hostapd
+fi
+/usr/bin/apt list --installed dnsmasq 2>/dev/null | grep dnsmasq
+if [ $? -eq 1 ]; then
+    /bin/echo "dnsmasq is not installed, installing it"
+    /usr/bin/apt-get install -y dnsmasq
+fi
+cd /var/www/html/hsm
+iptables -S 2>&1 | grep nft
+if [ $? -eq 0 ]; then
+    /usr/bin/apt-get install -y nftables
+    ln -s ./hsmWrapper.nft hsmWrapper
+else
+    ln -s ./hsmWrapper.iptables hsmWrapper
+fi
+cd ./New
+find . -type f -print | while read line ; do
+    /bin/mv /$line /$line.orig
+    cp -p $line /$line
+done
+sed "s/NameOfNetwork/$name/" -i /etc/hostapd/hostapd.conf
+sed "s/AardvarkBadgerHedgehog/$password/" -i /etc/hostapd/hostapd.conf
+systemctl status hostapd | grep running
+if [ $? -eq 1 ]; then
+    systemctl stop hostapd
+    systemctl unmask hostapd
+    systemctl start hostapd
+fi
+systemctl status hsm | grep running
+if [ $? -eq 1 ]; then
+    systemctl stop hsm
+    systemctl unmask hsm
+    systemctl start hsm
+fi
+grep "#net.ipv4.ip_forward" /etc/sysctl.conf
+if [ $? -eq 0 ]; then
+    sed "s/#net.ipv4.ip_/net.ipv4.ip_/" -i /etc/sysctl.conf
+fi
+systemctl start dnsmasq
+perl -e '$line = `grep address /etc/network/interfaces`; @words = split(/ +/, $line); chop($words[2]); $cmd = "ifconfig wlan0 " . $words[2] . "/24"; `$cmd`'
+echo "At this point, your device should be setup to be a hotspot and it should be active"
+echo "You should check that you can get into the network prior to rebooting"

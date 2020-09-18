@@ -1,0 +1,6 @@
+hsm (1.5-1) stable; urgency=low
+
+  [ Mark Broihier ]
+  * Hot Spot Monitor - package that creates a wireless access point with tools to monitor network activity
+
+ -- Mark Broihier <mbroihier@yahoo.com>  Fri, 18 Sep 2020 19:10:00 +0000

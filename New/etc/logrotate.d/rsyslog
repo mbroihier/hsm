@@ -11,7 +11,7 @@
                 today=$(date +"plot_Auto%m-%d-20%y")
                 filename="/home/pi/hsm/$today_1.js"
                 if [ ! -f "$filename" ] ; then
-                    cd /home/pi/hsm/; /home/pi/hsm/process_iptable_logs.py /var/log/kern.log $today 
+                    cd /var/www/html/hsm/; /var/www/html/hsm/process_iptable_logs.py /var/log/kern.log $today 
                 fi
         endscript
 	postrotate

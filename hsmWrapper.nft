@@ -1,4 +1,4 @@
 #!/bin/bash
-cd /home/pi/hsm
+cd /var/www/html/hsm
 sudo nft -f iptables.ipv4.nat.wlogs.nft
 node hsm-display-server.js

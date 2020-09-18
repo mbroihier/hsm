@@ -1,0 +1,12 @@
+Source: hsm
+Section: unknown
+Priority: optional
+Maintainer: Mark Broihier <mbroihier@yahoo.com>
+Build-Depends: debhelper (>=10)
+Standards-Version: 4.0.0
+Homepage:
+
+Package: hsm
+Architecture: any
+Depends: nodejs (>=10.21), npm (>=5.8.0), python3 (>=3.7.3), hostapd (>=2.8), dnsmasq (>=2.8)
+Description: Package that installs an access point and tools to monitor its network traffic

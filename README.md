@@ -1,12 +1,11 @@
 # hsm - Hotspot Monitor
 
-**** see issue 5 regarding npm and nft/nftables problems with recent changes to buster and Node.js/npm - I'm intending to simplify the install soon 
+This repository contains code for implementing an access point/hotspot and a network monitor on a tethered Raspberry PI.  When I travel, I connect a Raspberry PI to my Android phone with a USB cable and use the Raspberry PI as the access point for my other devices (eg laptop, iPad ...).  The monitor features allow me to visually see how much data is going through the access point and to know where the data is coming from or where it is going to.  The the information gathered by the monitor can be displayed as graphs.  One display is a realtime graph that summarizes all the data going through the PI.  Other graphs are non realtime and produced on demand or when the kernel logs "rotate".
 
-This repository contains code for implementing a hotspot monitor on a Raspberry PI.  The code implements a hotspot/access point on a PI tethered to a phone.  A display server is started so that an observer can monitor, in real time, the amount of traffic going through the hotspot and can look at which links are utilizing the most traffic.  I've installed this on Stretch and Buster versions of Raspbian.  When installing this, I recommend that you use the PI that you intend to use as the hotspot.  Using this approach avoids driver installation issues that make hostapd inoperable.  Since my initial release, I've added instructions for installing Pi-hole.  I did this to reduce traffic when using my mobile data.  I also did this to have access to URLs from the Pi-hole database.  I use this information to map IP addresses to URLs to help clarify what applications are using large amounts of data. 
+I recommend installing this on a dedicated PI and installing it from scratch.  It doesn't have to be 3 or 4 although they will work just fine.  A zero w will do the job.  I use a PI zero at home to monitor my daily traffic (excluding smart TV video).  I've installed this on Stretch and Buster versions of Raspbian, but starting with v1.5-1 I've implemented an installer that is intended to work with buster. I also recommend installing a tool such as azlux's log2ram to reduce wear on your SD card.  This should be done after the raspbian install and before the hsm install.  I also recommend installing Pi-hole because it reduces traffic (and those pesky ads) to your mobile devices.  If Pi-hole is installed, the monitor software can use its database to annotate the IP addresses to help clarify what servers are being accessed.
 
-Release 1.2 of HSM to GITHUB has changes to real time monitoring to fix a hang when logs rotate.  Additionally, several design and name changes were made to clarify purpose, functionality, and reduce stress on browsers when they pull up utilization graphs.  With better response time and more information displayed on data point hovers, users should find the display more useful in tracking down data hogs.
+The monitor doesn't have to be used, the hsm service can be disabled and the hot spot/access point will still be fully functional.  If you choose to do this, you might want to contact me regarding adjustments to the iptables.  I have on my todo list, the separation of the access point installation from the monitor installation.  The access point setup by the way, was taken from files provided to me by Cornelius Keck, a former colleague of mine.  You may want to see his  LinkedIn account.
 
-The lastest release of HSM to GITHUB has azlux's log2ram added.  I found that in high use environments, the kern.log became quite large and I had file corruption whenever I shut down the Raspberry PI.  The file corruption was so extensive on my PI 4 that I had to reinstall after every shutdown.  Since moving the log to RAM, I've been fine - but you need plenty of RAM space.  At the moment I'm using 100M to store my logs and I suspect that allocation will increase as I use my monitor more.
 
 ![Alt text](/main.png?raw=true "Main page of file server")
 ![Alt text](/detail.png?raw=true "Detailed Graph of a Log")
@@ -14,64 +13,54 @@ The lastest release of HSM to GITHUB has azlux's log2ram added.  I found that in
 
 Installation
 
-  1)  Install Buster Lite from www.raspberrypi.org/downloads/raspbian
-      I do headless installs of my PI's which, on this publication date
-      means that I copy the raspbian image to the SD card plugged into my
-      Mac, mount the card and touch the ssh file on the boot partition.
-      
-      Note that initially you will want to be on your home's network 
-      with an ethernet cable so that you can update your image and
-      install necessary packages from the Internet and won't be affected
-      by the adjustments made to the wlan0 interface.
-  2)  Put the SD card in your target PI and boot it.
-  3)  Change the password.
-  4)  Change the node name to hsm.
+  1)  Install Buster Lite from www.raspberrypi.org onto an SD card following
+      instructions that appeal to you.  There are quite a few variations
+      discussed at numerous PI related sites.
+  2)  Put the SD card in your target PI and boot it.  You will need access
+      to the internet and keeping access can be tricky since the installation process
+      modifies the networking.  I always do headless installs, but this is
+      a time when having a keyboard and monitor directly connected to the target
+      PI can save the casual user a bunch of time.
+  3)  After the boot, use raspi-config to:
+      - Change the password
+      - Change the node name (I like hsm in this case)
+      - Change the time zone (I always use UTC)
+  4)  sudo reboot
   5)  sudo apt-get update
   6)  sudo apt-get upgrade
-  7)  sudo apt-get install git
-  8)  sudo apt-get install hostapd
-      - if this fails (seems to on PI 4's), do this:
-        + sudo systemctl unmask hostapd
-        + sudo systemctl enable hostapd
-  9)  sudo apt-get install dnsmasq
- 10)  sudo apt-get install nodejs
- 11)  sudo apt-get install npm
- 12)  git clone https://github.com/mbroihier/hsm
- 13)  cd hsm
- 14)  sudo cp -p hsm.service /lib/systemd/system/ 
- 15)  sudo systemctl enable hsm.service
- 16)  To install the access point setup, type ./apinstall on the command line (this script was inspired by Cornelius Keck)
-      - ./apinstall 
- 17)  change the SSID and password in the hostapd.conf file
- 18)  Install the node.js libraries 
-      - npm install
- 19)  Enable IP forwarding by editing /etc/sysctl.conf
- 20)  Using the installation instructions in https://github.com/azlux/log2ram, install log2ram.  Note that the install boots the computer.
- 21)  Once booted, log2ram, the hotspot, and hotspot monitor should be active.  If you do not want Pi-hole, stop here.
- 22)  Using a device attached to the hotspot network (it should be available after boot), log into the hotspot (192.168.100.1).
- 23)  Tether your phone to the Raspberry PI using an USB interface cable with appropriate adapters.  At this point, to reduce consumption of your mobile data, you want your phone connected to your home wifi.  
- 24)  Stop dnsmasq.  This is being done so that during the install of Pi-hole, the disabling of dnsmasq does not terminate DNS functionality.
-      - sudo systemctl stop dnsmasq
- 25)  Check to see if you have access to a name server
-      - ping www.google.com
- 26)  If you can't ping www.google.com, then edit /etc/resolv.conf and replace 127.0.0.1 with 8.8.8.8 as the name server IP address
-      - sudo vi /etc/resolv.conf
- 27)  Ping again to make sure you can now ping google.
- 28)  cd hsm
- 29)  git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
- 30)  cd "Pi-hole/automated install/"
- 31)  sudo bash basic-install.sh
- 32)  When questioned, select the wlan0 lan, and set your host address and gateway to 192.168.100.1 (from your /etc/network/interfaces file).
- 33)  When complete, change your Pi-hole password to something you can remember
-      - pihole -a -p
- 34)  Connect a device with a browser to your network and bring up the browser and navigate to the Pi-hole admin console (http://192.168.100.1/admin) and log into the administrator account.
- 35)  Click on Setup and setup the DHCP server (enable it and save it - maybe adjust your range depending on the number of clients you want to support).
- 36)  After logging out of the Pi-hole admin account, reboot the raspberry pi from your login console.  After the PI comes up, devices connecting to your hotspot will automatically have their requests to known ad servers filtered out by Pi-hole.
+  7)  sudo reboot
+  8)  Install log2ram if you are going to use it.  The instructions are at https://github.com/azlux/log2ram
 
-This procedure has been used with PI 0's, PI 3's, and PI 4's.  On the PI 3's, I've installed Stretch "lite" Raspbian.  On PI 0's and PI 4's I've installed Buster "lite" Raspbian.
+Next, perform one of the following: Manual hsm Installation or hsm Package Installation.  The advantage of the Manual installation is that if trouble occurs, the ppi and complete_configuration scripts can be useful debugging aids.  Manual installation isn't all that manual, the scripts do quite a bit of magic to avoid loss of internet access and I found that using the scripts to install were more reliable than attempting to follow a lengthly step by step procedure.
+
+Manual hsm Installation
+  1)  If you choose to do a manual installation, from a bash shell on your hsm dedicated PI, do this:
+      - sudo apt-get install -y git
+      - git clone https://github.com/mbroihier/hsm
+      - cd hsm
+  2)  Execute the pseudo package installer:
+      - sudo ./ppi <SSID> <password>
+      + SSID is your access point name
+      + password is the password you want to use
+
+hsm Package Installation (I know, it seem longer than the manual installation ....)
+  1)  Add a reference to the package by adding a file to /etc/apt/sources.list.d/:
+      - sudo vi /etc/apt/sources.list.d/mbroihier.list (add the following line)
+      + deb [trusted=yes] https://github.com/mbroihier/hsm/tree/debian/ ./
+  2)  sudo apt-get update
+  3)  sudo apt-get install -y hsm
+  4)  Complete the setup:
+      - cd /var/www/html/hsm/
+      - sudo ./complete_configuraton <SSID> <password>
+      + SSID is your access point name
+      + password is the password you want to use
+
+If you want Pi-hole (https://pi-hole.net), and you do, install it after you confirm your access point is functional.  Confirm functionality by attaching to your Android phone, enabling tethering, and then log onto your hotspot and confirm you have internet access by, for instance, browsing to a web site.  Bring up the monitor by browsing to http://192.168.100.1:3000.  When you install Pi-hole, you'll want it to be your DNS server which will mean that you need to disable dnsmasq (sudo systemctl stop dnsmasq and then sudo systemctl disable dnsmasq).  On my home network, Pi-hole blocks nearly 40% of the DNS requests made by typical pages I browse.  I'm a big fan.
+
+
 
 **** Note 1 ****
-When hsm is first installed, annotation (translation of IPs to URLs) is effectively disabled.  This is because Pi-hole has not built up its database and the build_url_ip_db script has not been run.  Depending on how many URLs have been collected by Pi-hole, build_url_ip_db can take some time to run (for 5000-6000 URLs I've seen it take ~ 100 seconds on a PI 0).  build_url_ip_db must be run to annotate IP addresses on graphs. On the "Process New Logs" web page, if you check the update annotation check box prior to pressing the yes button, the annotation database will be refreshed/built.
+When hsm is first installed, annotation (translation of IP addresses to URLs) is effectively disabled.  This is because Pi-hole has not built up its database and the build_url_ip_db script has not been run.  Depending on how many URLs have been collected by Pi-hole, build_url_ip_db can take some time to run (for 5000-6000 URLs I've seen it take ~ 100 seconds on a PI 0).  build_url_ip_db must be run to annotate IP addresses on graphs. On the "Process New Logs" web page, if you check the "update annotation" check box prior to pressing the yes button, the annotation database will be refreshed/built (but only if there is a Pi-hole database).
 
 **** Note 2 ****
-log2ram initially only has 40M of RAM disk space.  Monitor your usage and adjust as necessary.  I'm using 100M and won't be surprised if I bump that some more.
+log2ram initially only has 40M of RAM disk space.  Monitor your usage and adjust as necessary.  I'm using 100M.

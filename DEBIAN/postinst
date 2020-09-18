@@ -1,0 +1,4 @@
+#!/bin/bash
+/bin/echo "in postinst"
+env
+npm i npm@latest -g
