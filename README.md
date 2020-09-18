@@ -40,20 +40,20 @@ Manual hsm Installation
       - cd hsm
   2)  Execute the pseudo package installer:
       - sudo ./ppi <SSID> <password>
-      + SSID is your access point name
-      + password is the password you want to use
+        + SSID is your access point name
+         + password is the password you want to use
 
 hsm Package Installation (I know, it seem longer than the manual installation ....)
   1)  Add a reference to the package by adding a file to /etc/apt/sources.list.d/:
       - sudo vi /etc/apt/sources.list.d/mbroihier.list (add the following line)
-      + deb [trusted=yes] https://github.com/mbroihier/hsm/tree/debian/ ./
+      + deb [trusted=yes] https://github.com/mbroihier/hsm/tree/master/debian/ ./
   2)  sudo apt-get update
   3)  sudo apt-get install -y hsm
   4)  Complete the setup:
       - cd /var/www/html/hsm/
       - sudo ./complete_configuraton <SSID> <password>
-      + SSID is your access point name
-      + password is the password you want to use
+        + SSID is your access point name
+        + password is the password you want to use
 
 If you want Pi-hole (https://pi-hole.net), and you do, install it after you confirm your access point is functional.  Confirm functionality by attaching to your Android phone, enabling tethering, and then log onto your hotspot and confirm you have internet access by, for instance, browsing to a web site.  Bring up the monitor by browsing to http://192.168.100.1:3000.  When you install Pi-hole, you'll want it to be your DNS server which will mean that you need to disable dnsmasq (sudo systemctl stop dnsmasq and then sudo systemctl disable dnsmasq).  On my home network, Pi-hole blocks nearly 40% of the DNS requests made by typical pages I browse.  I'm a big fan.
 
