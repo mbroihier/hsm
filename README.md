@@ -46,7 +46,7 @@ Manual hsm Installation
 hsm Package Installation (I know, it seem longer than the manual installation ....)
   1)  Add a reference to the package by adding a file to /etc/apt/sources.list.d/:
       - sudo vi /etc/apt/sources.list.d/mbroihier.list (add the following line)
-      + deb [trusted=yes] https://github.com/mbroihier/hsm/tree/master/debian/ ./
+      + deb [trusted=yes] https://mbroihier.github.io/hsm/debian/ ./
   2)  sudo apt-get update
   3)  sudo apt-get install -y hsm
   4)  Complete the setup:
